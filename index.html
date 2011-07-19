@@ -129,6 +129,8 @@ function main()
 
 
     maingame.initializeGame = function() {
+    	addPlayer();
+    	
     	addMap();
     };
     
@@ -136,6 +138,12 @@ function main()
     tileset: 'map_pieces',
     map: loadMap(),
     tileIsSolid: function(obj, t) {
+    	return t == 0;
+    },
+    tileIsSolidCeil: function(obj, t) {
+    	return t != null;
+    },
+    tileIsSolidFloor: function(obj, t) {
     	return t != null;
     }
     };
@@ -181,16 +189,18 @@ function loadMap() {
 "x      xxxxxxxxx   xx                  x",
 "x                  xx                  x",
 "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
-    ], [ [0, ' '], [1, 'x'] ]);
+    ], [ [null, ' '], [1, 'x'] ]);
 }
 
 //function to add the map object to the game. 
+//The map object mainly exists as a render object for the background. 
 function addMap() {
 	gbox.addObject({
 	id: 'background_id',
 	group: 'background',
 	first: function() {
-		
+		//update the frame count for animations
+		frameCount++;
 	},
 	
 	blit: function() {
@@ -202,6 +212,80 @@ function addMap() {
 	
 	});
 }
+
+
+//function to add the player to the game. 
+//I might go ahead and separate this into a separate module 
+//depending on how this code ends up being structured. 
+function addPlayer() {
+	var player = {
+	id: 'player_id',
+	group: 'player',
+	tileset: 'player_run_tiles',
+	multiplier: 0,
+	
+	colh: gbox.getTiles('player_run_tiles').tileh,
+	
+	//function called when the player is initialized. 
+	//construct animations here. 
+	initialize: function() {
+		toys.platformer.initialize(this, {});
+		
+		//placeholder coordinates for now. 
+		this.x = 200;
+		this.y = 20;
+		
+		//define animations here
+		this.animList = {
+		still: {speed: 1, frames: [0]},
+		run: {speed: 3, frames: [0, 1, 2, 3]}
+		};
+		
+		this.animIndex = 'still';
+		this.jumpaccy = 10;
+	},
+	
+	//Update function called every frame
+	first: function() {
+		
+		
+		if(this.accx == 0) this.animIndex = 'still';
+		else this.animIndex = 'run'
+		
+		if (frameCount%this.animList[this.animIndex].speed == 0)
+			this.frame = help.decideFrame(frameCount, this.animList[this.animIndex]);
+		toys.platformer.applyGravity(this);
+		toys.platformer.horizontalKeys(this, {left: 'left', right: 'right'});
+		toys.platformer.jumpKeys(this,{jump:"a",audiojump:""}); // handle jumping
+		toys.platformer.handleAccellerations(this);
+		toys.platformer.horizontalTileCollision(this, map, 'map', {tolerance: 6, approximation: 3});
+		toys.platformer.verticalTileCollision(this, map, 'map');
+		
+		toys.platformer.setSide(this);
+		
+		if(this.touchedFloor) this.multiplier=0;
+		
+	},
+	
+	//The render function called every frame
+	blit: function() {
+		gbox.blitTile(gbox.getBufferContext(), {
+		tileset: this.tileset,
+		tile: this.frame,
+		dx: this.x, 
+		dy: this.y,
+		fliph: this.side,
+		flipv: this.flipv,
+		camera: this.camera,
+		alpha: 1.0
+		})
+	}
+		
+	};
+	
+	gbox.addObject(player);
+}
+
 
 </script>
 </html>
