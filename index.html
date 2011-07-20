@@ -206,6 +206,9 @@ function addMap() {
 	blit: function() {
 		gbox.blitFade(gbox.getBufferContext(), {alpha: 1});
 		
+		//here is where we center the camera object
+		followCamera(gbox.getObject('player', 'player_id'), { w: map.w, h: map.h });
+		
 		gbox.blit(gbox.getBufferContext(), gbox.getCanvas('map_canvas'), {dx: 0, dy: 0, dw: gbox.getCanvas('map_canvas').width, dh: gbox.getCanvas('map_canvas').height, sourcecamera: true});
 		
 	}
@@ -238,11 +241,11 @@ function addPlayer() {
 		//define animations here
 		this.animList = {
 		still: {speed: 1, frames: [0]},
-		run: {speed: 3, frames: [0, 1, 2, 3]}
+		run: {speed: 4, frames: [1, 2, 3]}
 		};
 		
 		this.animIndex = 'still';
-		this.jumpaccy = 10;
+		this.jumpaccy = 5;
 	},
 	
 	//Update function called every frame
@@ -256,11 +259,10 @@ function addPlayer() {
 			this.frame = help.decideFrame(frameCount, this.animList[this.animIndex]);
 		toys.platformer.applyGravity(this);
 		toys.platformer.horizontalKeys(this, {left: 'left', right: 'right'});
-		toys.platformer.jumpKeys(this,{jump:"a",audiojump:""}); // handle jumping
-		toys.platformer.handleAccellerations(this);
-		toys.platformer.horizontalTileCollision(this, map, 'map', {tolerance: 6, approximation: 3});
+		toys.platformer.horizontalTileCollision(this, map, 'map', {tolerance: 3, approximation: 3});
 		toys.platformer.verticalTileCollision(this, map, 'map');
-		
+		toys.platformer.jumpKeys(this,{jump:"up",audiojump:""}); // handle jumping
+		toys.platformer.handleAccellerations(this);
 		toys.platformer.setSide(this);
 		
 		if(this.touchedFloor) this.multiplier=0;
@@ -269,21 +271,51 @@ function addPlayer() {
 	
 	//The render function called every frame
 	blit: function() {
-		gbox.blitTile(gbox.getBufferContext(), {
-		tileset: this.tileset,
-		tile: this.frame,
-		dx: this.x, 
-		dy: this.y,
-		fliph: this.side,
-		flipv: this.flipv,
-		camera: this.camera,
-		alpha: 1.0
-		})
+		if(this.accy != 0)
+			gbox.blitTile(gbox.getBufferContext(), {
+			tileset: 'player_jump_tiles',
+			tile: 0,
+			dx: this.x,
+			dy: this.y,
+			fliph: this.side,
+			flipv: this.flipv,
+			camera: this.camera,
+			alpha: 1.0
+			});
+		else
+			gbox.blitTile(gbox.getBufferContext(), {
+			tileset: this.tileset,
+			tile: this.frame,
+			dx: this.x, 
+			dy: this.y,
+			fliph: this.side,
+			flipv: this.flipv,
+			camera: this.camera,
+			alpha: 1.0
+			});
 	}
 		
 	};
 	
 	gbox.addObject(player);
+}
+
+
+function followCamera(obj, viewdata) {
+    xbuf = 96;
+    ybuf = 96;
+    xcam = gbox.getCamera().x;
+    ycam = gbox.getCamera().y;
+
+    if ( (obj.x - xcam) > (gbox._screenw - xbuf)) gbox.setCameraX(xcam+ (obj.x-xcam) - (gbox._screenw - xbuf), viewdata);
+
+    if ( (obj.x - xcam) < xbuf) gbox.setCameraX(xcam + (obj.x - xcam)-xbuf, viewdata);
+    
+    if ( (obj.y - ycam) > (gbox._screenh - ybuf)) gbox.setCameraY(ycam+ (obj.y-ycam) - (gbox._screenh - ybuf), viewdata);
+
+    if ( (obj.y - ycam) < ybuf) gbox.setCameraY(ycam + (obj.y - ycam)-ybuf, viewdata);
+    
+
 }
 
 
