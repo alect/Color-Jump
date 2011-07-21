@@ -227,43 +227,43 @@ function addPlayer() {
 	tileset: 'player_run_tiles',
 	multiplier: 0,
 	
-	colh: gbox.getTiles('player_run_tiles').tileh,
+	colh: gbox.getTiles('player_run_tiles').tileh-4,
+	colw: gbox.getTiles('player_run_tiles').tilew-4,
 	
 	//function called when the player is initialized. 
 	//construct animations here. 
 	initialize: function() {
-		toys.platformer.initialize(this, {});
+		toys.platformer.initialize(this, {
+			frames: {
+				still: {speed: 1, frames: [0]},
+				walking: {speed: 3, frames: [1, 2, 3]},
+				jumping: {speed:1, frames: [0]},
+				falling: {speed:1, frames: [0]}
+			}
+		});
 		
 		//placeholder coordinates for now. 
 		this.x = 200;
 		this.y = 20;
 		
-		//define animations here
-		this.animList = {
-		still: {speed: 1, frames: [0]},
-		run: {speed: 4, frames: [1, 2, 3]}
-		};
-		
-		this.animIndex = 'still';
-		this.jumpaccy = 5;
+		this.jumpaccy = 7;
 	},
 	
 	//Update function called every frame
 	first: function() {
 		
 		
-		if(this.accx == 0) this.animIndex = 'still';
-		else this.animIndex = 'run'
-		
-		if (frameCount%this.animList[this.animIndex].speed == 0)
-			this.frame = help.decideFrame(frameCount, this.animList[this.animIndex]);
+		this.counter=(this.counter+1)%10;
 		toys.platformer.applyGravity(this);
-		toys.platformer.horizontalKeys(this, {left: 'left', right: 'right'});
-		toys.platformer.horizontalTileCollision(this, map, 'map', {tolerance: 3, approximation: 3});
+		
 		toys.platformer.verticalTileCollision(this, map, 'map');
 		toys.platformer.jumpKeys(this,{jump:"up",audiojump:""}); // handle jumping
+		toys.platformer.horizontalKeys(this, {left: 'left', right: 'right'});
+		toys.platformer.horizontalTileCollision(this, map, 'map');
 		toys.platformer.handleAccellerations(this);
 		toys.platformer.setSide(this);
+		//Here's where we set the animation frame
+		toys.platformer.setFrame(this);
 		
 		if(this.touchedFloor) this.multiplier=0;
 		
@@ -271,7 +271,7 @@ function addPlayer() {
 	
 	//The render function called every frame
 	blit: function() {
-		if(this.accy != 0)
+		if(!toys.platformer.canJump(this))
 			gbox.blitTile(gbox.getBufferContext(), {
 			tileset: 'player_jump_tiles',
 			tile: 0,
